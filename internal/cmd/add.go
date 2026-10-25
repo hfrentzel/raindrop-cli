@@ -40,20 +40,20 @@ func (c *AddCmd) Run(flags *RootFlags) error {
 		return fmt.Errorf("URL is required (use - for stdin)")
 	}
 
-	// Parse URL for metadata if not skipped and no title override
-	var parsed *api.ParsedURL
-
-	if !c.NoFetch && c.Title == "" {
-		parsed, _ = client.ParseURL(ctx, c.URL) // ignore errors, continue without metadata
-	}
-
 	req := &api.CreateRaindropRequest{
 		Link:        c.URL,
 		Tags:        c.normalizeTags(),
 		Note:        c.Note,
-		PleaseParse: !c.NoFetch && c.Title == "",
 	}
 	req.Collection.ID = collectionID
+
+	// Parse URL for metadata if not skipped and no title override
+	var parsed *api.ParsedURL
+
+	if !c.NoFetch && c.Title == "" {
+		req.PleaseParse = &struct{}{}
+		parsed, _ = client.ParseURL(ctx, c.URL) // ignore errors, continue without metadata
+	}
 
 	if c.Title != "" {
 		req.Title = c.Title
@@ -98,7 +98,7 @@ func (c *AddCmd) runBulk(client *api.Client, flags *RootFlags, collectionID int)
 		req := api.CreateRaindropRequest{
 			Link:        u,
 			Tags:        c.normalizeTags(),
-			PleaseParse: true,
+			PleaseParse: &struct{}{},
 		}
 		req.Collection.ID = collectionID
 
